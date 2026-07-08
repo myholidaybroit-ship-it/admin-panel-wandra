@@ -1,0 +1,126 @@
+/* ============================================================
+   Wandra design tokens — sourced from design.md
+   (MiniMax-style system: stark black/white canvas, DM Sans,
+   pill buttons, vibrant product-identity gradient cards)
+   ============================================================ */
+:root {
+  /* ---- Brand & Accent (product-identity ONLY, never generic UI) ---- */
+  --color-brand-coral: #f84f39;
+  --color-brand-coral-deep: #d93a26;
+  --color-brand-magenta: #e93d82;
+  --color-brand-magenta-deep: #c22a68;
+  --color-brand-blue: #2d55fb;
+  --color-brand-blue-deep: #1a3fd6;
+  --color-brand-blue-700: #1c3faa;
+  --color-brand-cyan: #58c4f6;
+  --color-brand-blue-200: #dbeafe;
+  --color-brand-purple: #7c3aed;
+  --color-brand-purple-deep: #5b21b6;
+
+  /* ---- Primary / CTA ---- */
+  --color-primary: #000000;
+  --color-primary-pressed: #2e2e33; /* charcoal lift on press */
+  --color-on-primary: #ffffff;
+  --color-on-dark: #ffffff;
+  --color-on-dark-soft: rgba(255, 255, 255, 0.8);
+
+  /* ---- Surface ---- */
+  --color-canvas: #ffffff;
+  --color-surface: #f5f5f7;
+  --color-surface-soft: #fafafa;
+  --color-hairline: #e8e8ec;
+  --color-hairline-soft: #f0f0f3;
+  --color-footer-bg: #0a0a0a;
+
+  /* ---- Text ---- */
+  --color-ink: #111113;
+  --color-ink-strong: #000000;
+  --color-charcoal: #2e2e33;
+  --color-slate: #55555e;
+  --color-steel: #71717a;
+  --color-stone: #8b8b94;
+  --color-muted: #9ca3af;
+
+  /* ---- Semantic ---- */
+  --color-success-bg: #e6f6ec;
+  --color-success-text: #15803d;
+  --color-success: #16a34a;
+  --color-warning: #ab6400;
+  --color-warning-bg: #fdf3e0;
+  --color-error: #d45656;
+  --color-error-bg: #fdecec;
+
+  /* ---- Typography ---- */
+  --font-sans: 'DM Sans', 'Inter', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ---- Spacing (4px base, 8px primary increment) ---- */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-xxxl: 40px;
+  --space-section-sm: 48px;
+  --space-section: 64px;
+  --space-section-lg: 80px;
+  --space-hero: 96px;
+
+  /* ---- Radius ---- */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-xxl: 20px;
+  --radius-xxxl: 24px;
+  --radius-hero: 32px;
+  --radius-full: 9999px;
+
+  /* ---- Elevation (predominantly flat) ---- */
+  --shadow-1: rgba(0, 0, 0, 0.04) 0px 1px 2px 0px;
+  --shadow-2: rgba(0, 0, 0, 0.08) 0px 4px 6px 0px;
+  --shadow-3: rgba(0, 0, 0, 0.08) 0px 0px 22px 0px;
+  --shadow-4: rgba(36, 36, 36, 0.08) 0px 12px 16px -4px;
+  --shadow-purple-ambient: rgba(44, 30, 116, 0.16) 0px 0px 15px;
+
+  /* ---- Layout ---- */
+  --container-max: 1280px;
+  --gutter: 32px;
+  --sidebar-width: 232px;
+  --topbar-height: 56px;
+  --footerbar-height: 40px;
+
+  /* ---- Motion (design.md recommends 150–200ms ease) ---- */
+  --ease-ui: 180ms ease;
+
+  /* ============================================================
+     Legacy aliases (old token names → new palette) so every
+     surface picks up the revamp; swept out of page CSS over time.
+     ============================================================ */
+  --color-primary-active: var(--color-primary-pressed);
+  --color-text-link: var(--color-brand-blue-deep);
+  --color-text-link-secondary: var(--color-brand-blue);
+  --color-accent-link-bright: var(--color-brand-cyan);
+  --color-canvas-soft: var(--color-surface-soft);
+  --color-surface-card: var(--color-canvas);
+  --color-surface-strong: var(--color-surface);
+  --color-surface-dark: var(--color-ink);
+  --color-surface-dark-elevated: #1a1a1e;
+  --color-sky-light: var(--color-brand-blue-200);
+  --color-sky-mid: var(--color-brand-cyan);
+  --color-hairline-strong: var(--color-hairline);
+  --color-body: var(--color-slate);
+  --color-body-strong: var(--color-ink);
+  --color-muted-soft: #c6c6cd;
+  --color-preview: var(--color-brand-purple);
+  --color-info-bg: var(--color-brand-blue-200);
+  --color-preview-bg: #f1e9fd;
+  --space-base: var(--space-md);
+  --radius-pill: var(--radius-full);
+  --shadow-soft: var(--shadow-1);
+  --shadow-card: none;
+  --shadow-pop: var(--shadow-4);
+}
