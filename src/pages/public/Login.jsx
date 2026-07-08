@@ -7,7 +7,7 @@ import '../../components/layout/admin.css'
 export default function Login() {
   const nav = useNavigate()
   const { login } = useApp()
-  const [email, setEmail] = useState('admin@wandra.travel')
+  const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
