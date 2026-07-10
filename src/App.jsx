@@ -17,6 +17,7 @@ import Subscriptions from './pages/admin/Subscriptions'
 import DemoRequests from './pages/admin/DemoRequests'
 import DemoCreate from './pages/admin/DemoCreate'
 import Settings from './pages/admin/Settings'
+import SupportCenter from './pages/admin/SupportCenter'
 
 export default function App() {
   return (
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="subscriptions" element={<Subscriptions />} />
           <Route path="demo-requests" element={<DemoRequests />} />
           <Route path="demo-requests/new" element={<DemoCreate />} />
+          <Route path="support" element={<SupportCenter />} />
           <Route path="settings" element={<Settings />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

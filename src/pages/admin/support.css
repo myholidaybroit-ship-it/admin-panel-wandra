@@ -1,0 +1,19 @@
+.support-settings-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(280px, .75fr); gap: 18px; align-items: start; }
+.support-settings-card, .support-contact-preview { min-width: 0; }
+.support-section-head { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
+.support-section-icon, .support-preview-mark { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--color-hairline); color: var(--color-ink); background: var(--color-surface-soft); border-radius: 8px; }
+.support-form { margin-top: 24px; }
+.support-form-actions { justify-content: flex-end; margin-top: 22px; }
+.support-preview-brand { display: flex; align-items: center; gap: 11px; padding: 22px 0; margin-top: 20px; border-top: 1px solid var(--color-hairline-soft); border-bottom: 1px solid var(--color-hairline-soft); }
+.support-preview-lines { display: grid; gap: 15px; padding-top: 20px; }
+.support-preview-lines > div { display: flex; justify-content: space-between; gap: 14px; font-size: 13px; }
+.support-preview-lines span { color: var(--color-body); }
+.support-preview-lines strong { color: var(--color-ink); font-weight: 600; text-align: right; overflow-wrap: anywhere; }
+.support-inbox-head { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 36px 0 14px; }
+.support-inbox-card { overflow: visible; }
+.support-table-title { font-weight: 650; color: var(--color-ink); }
+.support-message-preview { display: block; max-width: 290px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 3px; }
+.support-category { display: inline-block; margin-top: 7px; font-size: 11px; color: var(--color-steel); }
+.support-contact { display: grid; gap: 3px; overflow-wrap: anywhere; font-size: 12px; color: var(--color-body); }
+@media (max-width: 900px) { .support-settings-grid { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .support-preview-lines > div { display: grid; gap: 3px; } .support-preview-lines strong { text-align: left; } .support-inbox-head { align-items: flex-start; } }

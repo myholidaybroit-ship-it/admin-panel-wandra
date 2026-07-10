@@ -10,6 +10,7 @@ const NAV_TOP = [
   { to: '/app', label: 'Dashboard', icon: 'dashboard', end: true },
   { to: '/app/agencies', label: 'Agencies & Users', icon: 'users' },
   { to: '/app/demo-requests', label: 'Demos', icon: 'calendar' },
+  { to: '/app/support', label: 'Support', icon: 'help' },
 ]
 const NAV_BILLING = [
   { to: '/app/transactions', label: 'Transactions', icon: 'invoices' },

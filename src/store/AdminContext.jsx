@@ -15,6 +15,8 @@ export function AppProvider({ children }) {
   const [plans, setPlans] = useState([])
   const [demoRequests, setDemoRequests] = useState([])
   const [transactions, setTransactions] = useState([])
+  const [supportSettings, setSupportSettings] = useState(null)
+  const [supportInquiries, setSupportInquiries] = useState([])
   const [admin, setAdmin] = useState(null)
   const [toasts, setToasts] = useState([])
   const [ready, setReady] = useState(false)
@@ -35,12 +37,13 @@ export function AppProvider({ children }) {
   }, [])
 
   const bootstrap = useCallback(async () => {
-    const [ag, pl, dm, tx, me] = await Promise.all([
+    const [ag, pl, dm, tx, me, ss, si] = await Promise.all([
       api.get('/agencies'), api.get('/plans'), api.get('/demos'),
-      api.get('/transactions'), api.get('/auth/me'),
+      api.get('/transactions'), api.get('/auth/me'), api.get('/support/settings'),
+      api.get('/support/inquiries'),
     ])
     setAgencies(ag.items); setPlans(pl.items); setDemoRequests(dm.items)
-    setTransactions(tx.items); setAdmin(me.admin)
+    setTransactions(tx.items); setAdmin(me.admin); setSupportSettings(ss); setSupportInquiries(si.items)
   }, [])
 
   useEffect(() => {
@@ -61,7 +64,10 @@ export function AppProvider({ children }) {
     setAuthed(true)
     return me
   }
-  function logout() { api.logout(); setAuthed(false); setAgencies([]); setTransactions([]); setDemoRequests([]) }
+  function logout() {
+    api.logout(); setAuthed(false); setAgencies([]); setTransactions([]); setDemoRequests([])
+    setSupportSettings(null); setSupportInquiries([])
+  }
 
   /* ---------- plan defaults (read from loaded plans) ---------- */
   const planFeatures = useCallback((planId) => {
@@ -72,7 +78,7 @@ export function AppProvider({ children }) {
     const p = plans.find((x) => x.id === planId || x.key === planId)
     return p?.limits || defaultLimitsForPlan(planId)
   }, [plans])
-  const proPrice = () => plans.find((p) => p.key === 'Pro')?.price || 0
+  const proPrice = () => plans.find((p) => p.key === 'Pro')?.price || 3999
 
   const replaceAgency = (a) => setAgencies((l) => l.map((x) => (x.id === a.id ? a : x)))
 
@@ -134,6 +140,19 @@ export function AppProvider({ children }) {
   async function updateDemo(id, patch) { const rec = await api.patch(`/demos/${id}`, patch); setDemoRequests((d) => d.map((x) => (x.id === id ? rec : x))) }
   async function removeDemo(id) { await api.del(`/demos/${id}`); setDemoRequests((d) => d.filter((x) => x.id !== id)); toast('Demo entry removed') }
 
+  /* ---------- Vendor support ---------- */
+  async function updateSupportSettings(patch) {
+    const settings = await api.patch('/support/settings', patch)
+    setSupportSettings(settings)
+    toast('Support details saved')
+    return settings
+  }
+  async function updateSupportInquiry(id, patch) {
+    const inquiry = await api.patch(`/support/inquiries/${id}`, patch)
+    setSupportInquiries((items) => items.map((item) => item.id === id ? inquiry : item))
+    return inquiry
+  }
+
   /* ---------- Admin account ---------- */
   async function updateAdmin(patch) { const { admin: a } = await api.patch('/auth/profile', patch); setAdmin(a) }
   async function updatePassword(current, next) {
@@ -144,7 +163,7 @@ export function AppProvider({ children }) {
 
   const value = {
     ready, authed, login, logout,
-    agencies, plans, demoRequests, admin, transactions, toasts,
+    agencies, plans, demoRequests, admin, transactions, supportSettings, supportInquiries, toasts,
     inr, toast,
     planFeatures, planLimits,
     addAgency, getAgency, updateAgency, removeAgency, setAgencyStatus,
@@ -153,6 +172,7 @@ export function AppProvider({ children }) {
     assignProPlan, downgradeToFree,
     requestRenewal, cancelRenewalRequest, respondRenewal, recordRenewal, proPrice,
     addDemo, updateDemo, removeDemo,
+    updateSupportSettings, updateSupportInquiry,
     setAdmin, updateAdmin, updatePassword, resetAdminPassword,
   }
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>

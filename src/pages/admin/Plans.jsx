@@ -26,7 +26,7 @@ export default function Plans() {
 
   return (
     <>
-      <PageHeader title="Plans & Feature Control" subtitle="Two plans power the platform. Toggle any feature on or off for Free or Pro — changes flow to new agencies, and you can push them to existing ones." />
+      <PageHeader title="Plans & Feature Control" subtitle="Free and Pro are the only platform plans. Pro uses one monthly price that you can manage here." />
 
       {/* Plan summary cards */}
       <div className="plan-grid mb-lg">
@@ -37,10 +37,8 @@ export default function Plans() {
               {p.featured && <span className="plan-most-popular">MOST POPULAR</span>}
             </div>
             <div className="plan-price">
-              {p.oldPrice ? <span style={{ textDecoration: 'line-through', opacity: 0.5, fontSize: 15, marginRight: 8 }}>{inr(p.oldPrice)}</span> : null}
-              {p.price === 0 ? 'Free' : inr(p.price)}<span> / {p.period}</span>
+              {p.price === 0 ? 'Free' : inr(p.price)}<span>{p.price === 0 ? ' forever' : ' / month'}</span>
             </div>
-            {p.priceYear ? <div className="t-caption c-steel" style={{ marginTop: -4, marginBottom: 4 }}>or {inr(p.priceYear)}/mo billed yearly</div> : null}
             <div className="plan-card-tagline">{p.tagline}</div>
             <div className="plan-stat-row">
               <div><div className="plan-stat-num">{onCount(p.id)}<span style={{ fontSize: 14, fontWeight: 500 }}> / {FEATURE_COUNT}</span></div><div className="plan-stat-lbl">Features on</div></div>
@@ -48,7 +46,7 @@ export default function Plans() {
               <div><div className="plan-stat-num">{inr(countBy(p.id) * p.price)}</div><div className="plan-stat-lbl">MRR</div></div>
             </div>
             <div className="row gap-xs wrap">
-              <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setApplyFor(null); setEdit(edit?.id === p.id ? null : { id: p.id, price: p.price, priceYear: p.priceYear ?? '', oldPrice: p.oldPrice ?? '', tagline: p.tagline }) }}><Icon name="edit" size={14} /> Price & details</Button>
+              <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setApplyFor(null); setEdit(edit?.id === p.id ? null : { id: p.id, price: p.price, tagline: p.tagline }) }}><Icon name="edit" size={14} /> Price & details</Button>
               <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setEdit(null); setApplyFor(applyFor === p.id ? null : p.id) }}>Apply to {countBy(p.id)} agencies</Button>
               <Button variant="tertiary" size="sm" onClick={() => app.resetPlanToCatalog(p.id)}>Reset</Button>
             </div>
@@ -56,25 +54,17 @@ export default function Plans() {
             {edit?.id === p.id && (
               <div className="plan-edit col gap-sm">
                 <label className="col gap-xxs">
-                  <span className="t-caption-bold" style={{ opacity: 0.8 }}>Monthly price (₹) — 0 for free</span>
-                  <Input type="number" min={0} value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />
+                  <span className="t-caption-bold" style={{ opacity: 0.8 }}>{p.id === 'Free' ? 'Plan price' : 'Monthly price (₹)'}</span>
+                  {p.id === 'Free'
+                    ? <div className="control" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-steel)' }}>Free</div>
+                    : <Input type="number" min={0} value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />}
                 </label>
-                <div className="grid grid-2" style={{ gap: 10 }}>
-                  <label className="col gap-xxs">
-                    <span className="t-caption-bold" style={{ opacity: 0.8 }}>Yearly price / mo (₹)</span>
-                    <Input type="number" min={0} value={edit.priceYear} placeholder="e.g. 2999" onChange={(e) => setEdit({ ...edit, priceYear: e.target.value })} />
-                  </label>
-                  <label className="col gap-xxs">
-                    <span className="t-caption-bold" style={{ opacity: 0.8 }}>Strike-through price (₹)</span>
-                    <Input type="number" min={0} value={edit.oldPrice} placeholder="e.g. 9999" onChange={(e) => setEdit({ ...edit, oldPrice: e.target.value })} />
-                  </label>
-                </div>
                 <label className="col gap-xxs">
                   <span className="t-caption-bold" style={{ opacity: 0.8 }}>Tagline</span>
                   <Input value={edit.tagline} onChange={(e) => setEdit({ ...edit, tagline: e.target.value })} />
                 </label>
                 <div className="row gap-xs">
-                  <Button size="sm" onClick={() => { updatePlan(p.id, { price: Number(edit.price), priceYear: edit.priceYear, oldPrice: edit.oldPrice, tagline: edit.tagline }); setEdit(null) }}>Save</Button>
+                  <Button size="sm" onClick={() => { updatePlan(p.id, { price: p.id === 'Free' ? 0 : Number(edit.price), tagline: edit.tagline }); setEdit(null) }}>Save</Button>
                   <Button size="sm" variant="secondary" onClick={() => setEdit(null)}>Cancel</Button>
                 </div>
               </div>
