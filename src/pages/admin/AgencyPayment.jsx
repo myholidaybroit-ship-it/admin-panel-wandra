@@ -49,7 +49,11 @@ export default function AgencyPayment({ mode = 'activate' }) {
       />
 
       <div className="grid grid-2" style={{ alignItems: 'start' }}>
-        <PaymentForm defaultPrice={app.proPrice()} cta={isRenew ? 'Record renewal payment' : 'Confirm payment & activate Pro'} onConfirm={onConfirm} onCancel={() => nav(back)} />
+        <PaymentForm
+          defaultPrice={app.proBilledYearly() ? app.proAnnualBase() : app.proPrice()}
+          defaultDiscount={app.proBilledYearly() ? app.proAnnualDiscount() : 0}
+          billedNote={app.proBilledYearly() ? `Pro is billed yearly — ₹${app.proPrice().toLocaleString('en-IN')}/mo × 12 = ₹${app.proAnnualBase().toLocaleString('en-IN')} pre-filled${app.proAnnualDiscount() ? `, ${app.proAnnualDiscount()}% annual discount applied` : ''}.` : ''}
+          cta={isRenew ? 'Record renewal payment' : 'Confirm payment & activate Pro'} onConfirm={onConfirm} onCancel={() => nav(back)} />
 
         <Card className="stack-lg">
           <div className="pay-agency">
@@ -61,14 +65,14 @@ export default function AgencyPayment({ mode = 'activate' }) {
           </div>
           <div className="grid grid-2" style={{ gap: 16 }}>
             <KV label="Current plan">{a.plan}</KV>
-            <KV label="Pro price">₹{app.proPrice().toLocaleString('en-IN')}/mo</KV>
+            <KV label="Pro price">₹{app.proPrice().toLocaleString('en-IN')}/mo{app.proBilledYearly() ? ` · billed yearly ₹${app.proAnnual().toLocaleString('en-IN')}` : ''}</KV>
             {a.billing?.since && <KV label="Active since">{prettyDate(a.billing.since)}</KV>}
             {a.billing?.renewalOn && <KV label="Renews on">{prettyDate(a.billing.renewalOn)}</KV>}
           </div>
           <div className="wa-note row gap-xs" style={{ alignItems: 'flex-start' }}>
             <Icon name="check" size={14} />
             <span>{isRenew
-              ? 'Recording the payment extends the cycle by one month and files a new secured invoice.'
+              ? `Recording the payment extends the cycle by ${app.proBilledYearly() ? 'one year' : 'one month'} and files a new secured invoice.`
               : 'Pro only activates once a valid payment with a screenshot proof is recorded. This creates a secured invoice you can review anytime.'}</span>
           </div>
         </Card>

@@ -78,7 +78,12 @@ export function AppProvider({ children }) {
     const p = plans.find((x) => x.id === planId || x.key === planId)
     return p?.limits || defaultLimitsForPlan(planId)
   }, [plans])
-  const proPrice = () => plans.find((p) => p.key === 'Pro')?.price || 3999
+  const proPlan = () => plans.find((p) => p.key === 'Pro' || p.id === 'Pro') || {}
+  const proPrice = () => Number(proPlan().price) || 999                              // monthly rate
+  const proAnnualDiscount = () => Number(proPlan().annualDiscountPercent) || 0       // % off the yearly total
+  const proBilledYearly = () => (proPlan().billingCycle || 'yearly') === 'yearly'
+  const proAnnualBase = () => proPrice() * 12                                        // 12 months, before discount
+  const proAnnual = () => Math.round(proAnnualBase() * (1 - proAnnualDiscount() / 100)) // amount billed once a year
 
   const replaceAgency = (a) => setAgencies((l) => l.map((x) => (x.id === a.id ? a : x)))
 
@@ -171,6 +176,7 @@ export function AppProvider({ children }) {
     updatePlan, setPlanFeature, setPlanFeatures, setPlanLimit, resetPlanToCatalog, applyPlanToAgencies,
     assignProPlan, downgradeToFree,
     requestRenewal, cancelRenewalRequest, respondRenewal, recordRenewal, proPrice,
+    proPlan, proAnnualDiscount, proBilledYearly, proAnnualBase, proAnnual,
     addDemo, updateDemo, removeDemo,
     updateSupportSettings, updateSupportInquiry,
     setAdmin, updateAdmin, updatePassword, resetAdminPassword,

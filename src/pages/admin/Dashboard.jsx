@@ -14,7 +14,7 @@ export default function Dashboard() {
   const suspended = agencies.filter((a) => a.status === 'suspended')
   const proCount = agencies.filter((a) => a.plan === 'Pro').length
   const freeCount = agencies.length - proCount
-  const proPrice = plans.find((p) => p.id === 'Pro')?.price || 3999
+  const proPrice = plans.find((p) => p.id === 'Pro')?.price || 999
   const mrr = proCount * proPrice
   const interestedDemos = demoRequests.filter((d) => d.status === 'interested').length
   const pendingDemos = demoRequests.filter((d) => d.status === 'pending').length

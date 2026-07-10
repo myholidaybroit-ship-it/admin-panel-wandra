@@ -8,15 +8,16 @@ import { api } from '../../api'
 
 /* Inline secure payment capture (no modal). Calls onConfirm(pay).
    `defaultPrice` (the plan's managed price) pre-fills the Original price field. */
-export default function PaymentForm({ onConfirm, onCancel, cta = 'Confirm payment', defaultPrice }) {
+export default function PaymentForm({ onConfirm, onCancel, cta = 'Confirm payment', defaultPrice, defaultDiscount = 0, billedNote }) {
   const { proPrice, toast } = useApp()
   const basePrice = defaultPrice != null ? defaultPrice : proPrice()
   const fileRef = useRef(null)
   const priceTouched = useRef(false)
+  const discountTouched = useRef(false)
   const [f, setF] = useState({
     method: 'UPI',
     originalPrice: basePrice || 0,
-    discountPercent: 0,
+    discountPercent: Number(defaultDiscount) || 0,
     reference: '',
     note: '',
     proof: null,
@@ -34,8 +35,16 @@ export default function PaymentForm({ onConfirm, onCancel, cta = 'Confirm paymen
     }
   }, [basePrice]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Pre-fill the managed plan discount too (unless the operator changed it).
+  useEffect(() => {
+    if (!discountTouched.current && Number(f.discountPercent) !== Number(defaultDiscount)) {
+      setF((x) => ({ ...x, discountPercent: Number(defaultDiscount) || 0 }))
+    }
+  }, [defaultDiscount]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const set = (k) => (e) => {
     if (k === 'originalPrice') priceTouched.current = true
+    if (k === 'discountPercent') discountTouched.current = true
     setF((x) => ({ ...x, [k]: e?.target ? e.target.value : e }))
   }
   const { discount, amount } = computeAmount(f.originalPrice, f.discountPercent)
@@ -91,6 +100,7 @@ export default function PaymentForm({ onConfirm, onCancel, cta = 'Confirm paymen
           <Input type="number" min={0} max={100} value={f.discountPercent} onChange={set('discountPercent')} />
         </Field>
       </div>
+      {billedNote && <div className="t-caption c-steel" style={{ marginTop: -6 }}>{billedNote}</div>}
 
       <div className="pay-breakdown">
         <div className="pay-line"><span>Original price</span><span>{inr(f.originalPrice)}</span></div>

@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useApp } from '../../store/AdminContext'
-import { Button, Field, Input } from '../../components/ui/UI'
 import '../../components/layout/admin.css'
 
 export default function Login() {
@@ -9,6 +8,7 @@ export default function Login() {
   const { login } = useApp()
   const [email, setEmail] = useState('')
   const [pw, setPw] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -22,28 +22,36 @@ export default function Login() {
 
   return (
     <div className="lg-shell">
-      <div className="lg-visual">
-        <img className="lg-visual-logo" src="/brand/wandra-logo.png" alt="Wandra" />
-        <div className="lg-visual-quote">The control room for the entire Wandra travel platform.</div>
-        <div className="lg-visual-foot">Admin Console · manage agencies, plans & feature access</div>
-      </div>
       <div className="lg-panel">
-        <form className="lg-form" onSubmit={submit}>
-          <div className="lg-badge">● Super Admin</div>
-          <h1 className="lg-title">Sign in</h1>
-          <p className="lg-sub">Restricted access — platform operators only.</p>
-          <div className="col gap-md">
-            <Field label="Email">
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@wandra.travel" required />
-            </Field>
-            <Field label="Password">
-              <Input type="password" value={pw} onChange={(e) => setPw(e.target.value)} placeholder="••••••••" required />
-            </Field>
-            {err && <div style={{ color: '#dc2626', fontSize: 13 }}>{err}</div>}
-            <Button type="submit" className="w-full" disabled={busy}>{busy ? 'Signing in…' : 'Enter console'}</Button>
+        <div className="lg-box">
+          <img className="lg-logo" src="/brand/wandra-logo.png" alt="Wandra — Travel Software" />
+
+          <div className="lg-card">
+            <div className="lg-card-head">
+              <div className="lg-badge">Super Admin</div>
+              <h1 className="lg-title">Sign in</h1>
+              <p className="lg-sub">Restricted access to the Wandra operations console.</p>
+            </div>
+
+            <form className="lg-form" onSubmit={submit}>
+              <label className="lg-field">
+                <span>Email</span>
+                <input type="email" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="admin@wandra.travel" required />
+              </label>
+              <label className="lg-field">
+                <span>Password</span>
+                <span className="lg-password-wrap">
+                  <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} required />
+                  <button type="button" onClick={() => setShowPassword((visible) => !visible)}>{showPassword ? 'Hide' : 'Show'}</button>
+                </span>
+              </label>
+              {err && <div className="lg-error" role="alert">{err}</div>}
+              <button className="lg-submit" type="submit" disabled={busy}>{busy ? 'Checking session…' : 'Enter console'}</button>
+            </form>
+
+            <div className="lg-note">Secure session · All console access is audited</div>
           </div>
-          <div className="lg-hint">Protected by Wandra · all sessions are audited</div>
-        </form>
+        </div>
       </div>
     </div>
   )

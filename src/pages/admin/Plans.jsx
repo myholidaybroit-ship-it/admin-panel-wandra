@@ -26,7 +26,7 @@ export default function Plans() {
 
   return (
     <>
-      <PageHeader title="Plans & Feature Control" subtitle="Free and Pro are the only platform plans. Pro uses one monthly price that you can manage here." />
+      <PageHeader title="Plans & Feature Control" subtitle="Free and Pro are the only platform plans. Pro is ₹999/month, billed yearly — set the price and annual discount here." />
 
       {/* Plan summary cards */}
       <div className="plan-grid mb-lg">
@@ -39,6 +39,12 @@ export default function Plans() {
             <div className="plan-price">
               {p.price === 0 ? 'Free' : inr(p.price)}<span>{p.price === 0 ? ' forever' : ' / month'}</span>
             </div>
+            {p.price > 0 && (p.billingCycle === 'yearly') && (
+              <div className="t-caption c-steel" style={{ marginTop: -6, marginBottom: 6 }}>
+                Billed yearly · {inr(Math.round(p.price * 12 * (1 - (p.annualDiscountPercent || 0) / 100)))}/yr
+                {p.annualDiscountPercent > 0 ? ` (${p.annualDiscountPercent}% off)` : ''}
+              </div>
+            )}
             <div className="plan-card-tagline">{p.tagline}</div>
             <div className="plan-stat-row">
               <div><div className="plan-stat-num">{onCount(p.id)}<span style={{ fontSize: 14, fontWeight: 500 }}> / {FEATURE_COUNT}</span></div><div className="plan-stat-lbl">Features on</div></div>
@@ -46,7 +52,7 @@ export default function Plans() {
               <div><div className="plan-stat-num">{inr(countBy(p.id) * p.price)}</div><div className="plan-stat-lbl">MRR</div></div>
             </div>
             <div className="row gap-xs wrap">
-              <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setApplyFor(null); setEdit(edit?.id === p.id ? null : { id: p.id, price: p.price, tagline: p.tagline }) }}><Icon name="edit" size={14} /> Price & details</Button>
+              <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setApplyFor(null); setEdit(edit?.id === p.id ? null : { id: p.id, price: p.price, tagline: p.tagline, annualDiscountPercent: p.annualDiscountPercent || 0 }) }}><Icon name="edit" size={14} /> Price & details</Button>
               <Button variant={p.featured ? 'primary' : 'secondary'} size="sm" onClick={() => { setEdit(null); setApplyFor(applyFor === p.id ? null : p.id) }}>Apply to {countBy(p.id)} agencies</Button>
               <Button variant="tertiary" size="sm" onClick={() => app.resetPlanToCatalog(p.id)}>Reset</Button>
             </div>
@@ -59,12 +65,19 @@ export default function Plans() {
                     ? <div className="control" style={{ display: 'flex', alignItems: 'center', color: 'var(--color-steel)' }}>Free</div>
                     : <Input type="number" min={0} value={edit.price} onChange={(e) => setEdit({ ...edit, price: e.target.value })} />}
                 </label>
+                {p.id !== 'Free' && (
+                  <label className="col gap-xxs">
+                    <span className="t-caption-bold" style={{ opacity: 0.8 }}>Annual discount (%)</span>
+                    <Input type="number" min={0} max={100} value={edit.annualDiscountPercent} onChange={(e) => setEdit({ ...edit, annualDiscountPercent: e.target.value })} />
+                    <span className="t-caption c-steel">Pro is billed yearly. {Number(edit.price) > 0 ? `₹${Number(edit.price).toLocaleString('en-IN')}/mo × 12 = ₹${(Number(edit.price) * 12).toLocaleString('en-IN')} → billed ₹${Math.round(Number(edit.price) * 12 * (1 - (Number(edit.annualDiscountPercent) || 0) / 100)).toLocaleString('en-IN')}/yr.` : ''}</span>
+                  </label>
+                )}
                 <label className="col gap-xxs">
                   <span className="t-caption-bold" style={{ opacity: 0.8 }}>Tagline</span>
                   <Input value={edit.tagline} onChange={(e) => setEdit({ ...edit, tagline: e.target.value })} />
                 </label>
                 <div className="row gap-xs">
-                  <Button size="sm" onClick={() => { updatePlan(p.id, { price: p.id === 'Free' ? 0 : Number(edit.price), tagline: edit.tagline }); setEdit(null) }}>Save</Button>
+                  <Button size="sm" onClick={() => { updatePlan(p.id, { price: p.id === 'Free' ? 0 : Number(edit.price), tagline: edit.tagline, ...(p.id !== 'Free' ? { billingCycle: 'yearly', annualDiscountPercent: Number(edit.annualDiscountPercent) || 0 } : {}) }); setEdit(null) }}>Save</Button>
                   <Button size="sm" variant="secondary" onClick={() => setEdit(null)}>Cancel</Button>
                 </div>
               </div>

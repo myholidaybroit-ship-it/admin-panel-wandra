@@ -295,7 +295,7 @@ function BillingTab({ a, app, inr, nav, onActivate, onDowngrade }) {
         </div>
         <div className="renew-strip">
           <Icon name="billing" size={18} />
-          <span className="flex-1 t-body-sm">Activate Pro at <strong>{inr(app.proPrice())}/mo</strong> (discounts allowed).</span>
+          <span className="flex-1 t-body-sm">Activate Pro at <strong>{inr(app.proPrice())}/mo</strong>{app.proBilledYearly() ? `, billed yearly at ${inr(app.proAnnual())}` : ''} (discounts allowed).</span>
           <Button onClick={onActivate}>Activate Pro plan</Button>
         </div>
         {txns.length > 0 && <TxnList txns={txns} inr={inr} onOpen={openInvoice} />}
@@ -313,7 +313,7 @@ function BillingTab({ a, app, inr, nav, onActivate, onDowngrade }) {
           </div>
           <div className="grid grid-2" style={{ gap: 16 }}>
             <KV label="Plan">Wandra Pro</KV>
-            <KV label="Price">{inr(app.proPrice())}/mo</KV>
+            <KV label="Price">{inr(app.proPrice())}/mo{app.proBilledYearly() ? ` · ${inr(app.proAnnual())}/yr` : ''}</KV>
             <KV label="Active since">{prettyDate(a.billing?.since)}</KV>
             <KV label="Collected to date">{inr(paidTotal)}</KV>
           </div>
