@@ -108,6 +108,18 @@ export function AppProvider({ children }) {
   async function setLimit(id, key, value) { replaceAgency(await api.patch(`/agencies/${id}/limits`, { key, value })) }
   async function resetAgencyPassword(id, password) { await api.post(`/agencies/${id}/password`, { password }); toast('Agency password reset') }
 
+  /* ---------- per-agency CRM roles (read-only in the CRM — provisioned here) ---------- */
+  async function listAgencyRoles(id) { const r = await api.get(`/agencies/${id}/roles`); return r.items }
+  async function createAgencyRole(id, name, perms) { return api.post(`/agencies/${id}/roles`, { name, perms }) }
+  async function setAgencyRolePerm(id, roleId, key, value) { return api.patch(`/agencies/${id}/roles/${roleId}`, { key, value }) }
+  async function removeAgencyRole(id, roleId) { await api.del(`/agencies/${id}/roles/${roleId}`) }
+
+  /* ---------- per-agency CRM users (paid seats ₹999/user/mo — managed here) ---------- */
+  async function listAgencyUsers(id) { const r = await api.get(`/agencies/${id}/users`); return r.items }
+  async function createAgencyUser(id, data) { return api.post(`/agencies/${id}/users`, data) }
+  async function updateAgencyUser(id, userId, patch) { return api.patch(`/agencies/${id}/users/${userId}`, patch) }
+  async function removeAgencyUser(id, userId) { await api.del(`/agencies/${id}/users/${userId}`) }
+
   /* ---------- Plans ---------- */
   const replacePlan = (p) => setPlans((l) => l.map((x) => (x.id === p.id ? p : x)))
   async function updatePlan(planId, patch) { replacePlan(await api.patch(`/plans/${planId}`, patch)); toast('Plan updated') }
@@ -173,6 +185,8 @@ export function AppProvider({ children }) {
     planFeatures, planLimits,
     addAgency, getAgency, updateAgency, removeAgency, setAgencyStatus,
     setFeature, setFeatures, resetFeatures, setLimit, resetAgencyPassword,
+    listAgencyRoles, createAgencyRole, setAgencyRolePerm, removeAgencyRole,
+    listAgencyUsers, createAgencyUser, updateAgencyUser, removeAgencyUser,
     updatePlan, setPlanFeature, setPlanFeatures, setPlanLimit, resetPlanToCatalog, applyPlanToAgencies,
     assignProPlan, downgradeToFree,
     requestRenewal, cancelRenewalRequest, respondRenewal, recordRenewal, proPrice,

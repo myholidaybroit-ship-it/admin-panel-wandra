@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useApp } from '../../store/AdminContext'
-import { Card, Button, Badge, PillSelect, Input, ListSearch, EmptyState } from '../../components/ui/UI'
+import { Card, Button, Badge, PillSelect, Input, Field, ListSearch, EmptyState } from '../../components/ui/UI'
 import { Switch, KV } from '../../components/ui/Admin'
 import RenewalPanel from '../../components/ui/RenewalPanel'
 import { Icon } from '../../components/ui/icons'
-import { FEATURE_GROUPS, ALL_FEATURES, LIMIT_DEFS, countEnabled, FEATURE_COUNT } from '../../data/features'
+import { FEATURE_GROUPS, ALL_FEATURES, LIMIT_DEFS, ROLE_MODULES, countEnabled, FEATURE_COUNT } from '../../data/features'
 import { genPassword, copyText } from '../../utils/password'
 import { prettyDate } from '../../utils/billing'
 
@@ -138,7 +138,7 @@ export default function AgencyDetail() {
 
       {/* Tabs */}
       <div className="det-tabs">
-        {[['features', 'Feature Access'], ['limits', 'Usage Limits'], ['billing', 'Billing & Renewals'], ['overview', 'Profile & Usage']].map(([k, label]) => (
+        {[['features', 'Feature Access'], ['roles', 'Team & Roles'], ['limits', 'Usage Limits'], ['billing', 'Billing & Renewals'], ['overview', 'Profile & Usage']].map(([k, label]) => (
           <button key={k} className={`det-tab ${tab === k ? 'on' : ''}`} onClick={() => setTab(k)}>
             {label}
             {k === 'features' && <span className="tab-chip">{enabled}</span>}
@@ -201,6 +201,9 @@ export default function AgencyDetail() {
           })}
         </>
       )}
+
+      {/* ---- TEAM (users + roles) ---- */}
+      {tab === 'roles' && <TeamTab a={a} app={app} />}
 
       {/* ---- LIMITS ---- */}
       {tab === 'limits' && (
@@ -277,6 +280,299 @@ export default function AgencyDetail() {
       )}
 
     </>
+  )
+}
+
+/* ---------- Team tab (users + roles) ----------
+   The CRM shows users AND roles read-only; agencies send a "Roles & team"
+   request (Support Center inbox) and the Wandra ops team manages everything
+   here — every user is a paid seat at ₹999/user/month (the owner counts). */
+const BLANK_USER = { name: '', email: '', password: '', role: 'Sales', phone: '', department: '', designation: '' }
+const userInitials = (n) => (n || '?').split(' ').filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase()
+
+function TeamTab({ a, app }) {
+  const [users, setUsers] = useState(null)   // null = loading
+  const [roles, setRoles] = useState(null)
+
+  useEffect(() => {
+    let alive = true
+    app.listAgencyUsers(a.id).then((items) => { if (alive) setUsers(items) }).catch(() => { if (alive) setUsers([]) })
+    app.listAgencyRoles(a.id).then((items) => { if (alive) setRoles(items) }).catch(() => { if (alive) setRoles([]) })
+    return () => { alive = false }
+  }, [a.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (users === null || roles === null) return <Card><p className="t-body-sm c-steel">Loading team…</p></Card>
+
+  return (
+    <>
+      <div className="inline-panel">
+        <Icon name="users" size={18} />
+        <span className="flex-1 t-body-sm">
+          Users and roles are <strong>read-only inside the CRM</strong> — {a.name} sees them but can't change anything.
+          When they send a “Roles &amp; team” request (Support Center), do it for them here.
+          Every user is a paid seat at <strong>₹999 per user / month</strong> — the owner account counts too.
+        </span>
+      </div>
+
+      <UsersSection a={a} app={app} users={users} setUsers={setUsers} roles={roles} />
+      <RolesSection a={a} app={app} roles={roles} setRoles={setRoles} users={users} />
+    </>
+  )
+}
+
+/* ----- users: add / edit / role / status / password / delete ----- */
+function UsersSection({ a, app, users, setUsers, roles, }) {
+  const [adding, setAdding] = useState(false)
+  const [uform, setUform] = useState({ ...BLANK_USER, password: genPassword(10) })
+  const [editing, setEditing] = useState(null)     // user id being edited
+  const [eform, setEform] = useState(null)
+  const [pwReset, setPwReset] = useState(null)     // { user, password }
+  const [pendingDelete, setPendingDelete] = useState(null)
+
+  const roleNames = roles.map((r) => r.name)
+  const isOwner = (u) => u.designation === 'Owner'
+  const seatCap = a.limits?.team ?? -1
+  const replaceUser = (rec) => setUsers((l) => l.map((u) => (u.id === rec.id ? rec : u)))
+
+  const patch = async (user, p, okMsg) => {
+    try {
+      const rec = await app.updateAgencyUser(a.id, user.id, p)
+      replaceUser(rec)
+      if (okMsg) app.toast(okMsg)
+      return true
+    } catch (e) { app.toast(e.message || 'Could not update the user'); return false }
+  }
+
+  const create = async () => {
+    if (!uform.name.trim() || !uform.email.trim()) return app.toast('Name & email are required')
+    if (!uform.password) return app.toast('Set a password so they can log in')
+    try {
+      const rec = await app.createAgencyUser(a.id, { ...uform, name: uform.name.trim() })
+      setUsers((l) => [rec, ...l])
+      app.toast(`${rec.name} added — a new billable seat (₹999/mo)`)
+      setUform({ ...BLANK_USER, password: genPassword(10) })
+      setAdding(false)
+    } catch (e) { app.toast(e.message || 'Could not add the user') }
+  }
+
+  const saveEdit = async () => {
+    if (!eform.name.trim() || !eform.email.trim()) return app.toast('Name & email are required')
+    const ok = await patch({ id: editing }, {
+      name: eform.name.trim(), email: eform.email, phone: eform.phone,
+      department: eform.department, designation: eform.designation,
+    }, 'User updated — renames sync to their lead assignments')
+    if (ok) { setEditing(null); setEform(null) }
+  }
+
+  const remove = async (user) => {
+    try {
+      await app.removeAgencyUser(a.id, user.id)
+      setUsers((l) => l.filter((u) => u.id !== user.id))
+      app.toast(`${user.name} removed — the seat is free`)
+    } catch (e) { app.toast(e.message || 'Could not remove the user') }
+    setPendingDelete(null)
+  }
+
+  return (
+    <div className="mt-md">
+      <div className="row gap-sm wrap">
+        <div>
+          <div className="dash-panel-title">Users</div>
+          <div className="t-caption c-steel">{users.length} seat{users.length === 1 ? '' : 's'} in use{seatCap !== -1 ? ` of ${seatCap}` : ''} · ₹999 / user / month</div>
+        </div>
+        <div className="grow" />
+        {!adding && <Button size="sm" onClick={() => setAdding(true)}>+ Add user</Button>}
+      </div>
+
+      {adding && (
+        <Card className="mt-sm" pad={18}>
+          <div className="grid grid-2" style={{ gap: 12 }}>
+            <Field label="Name" required><Input value={uform.name} onChange={(e) => setUform({ ...uform, name: e.target.value })} placeholder="e.g. Rika Sharma" /></Field>
+            <Field label="Email" required><Input value={uform.email} onChange={(e) => setUform({ ...uform, email: e.target.value })} placeholder="name@agency.com" /></Field>
+            <Field label="Password" hint="They log in with this — share it with the agency">
+              <div className="row gap-xs">
+                <Input value={uform.password} onChange={(e) => setUform({ ...uform, password: e.target.value })} />
+                <button className="btn-icon" title="Generate" onClick={() => setUform({ ...uform, password: genPassword(10) })}><Icon name="refresh" size={15} /></button>
+                <button className="btn-icon" title="Copy" onClick={async () => { (await copyText(uform.password)) && app.toast('Password copied') }}><Icon name="copy" size={15} /></button>
+              </div>
+            </Field>
+            <Field label="Role"><PillSelect value={uform.role} options={roleNames} onChange={(v) => setUform({ ...uform, role: v })} /></Field>
+            <Field label="Phone"><Input value={uform.phone} onChange={(e) => setUform({ ...uform, phone: e.target.value })} /></Field>
+            <Field label="Department"><Input value={uform.department} onChange={(e) => setUform({ ...uform, department: e.target.value })} /></Field>
+          </div>
+          <div className="row gap-xs mt-sm">
+            <Button size="sm" onClick={create}>Create user</Button>
+            <Button size="sm" variant="secondary" onClick={() => setAdding(false)}>Cancel</Button>
+          </div>
+        </Card>
+      )}
+
+      {pwReset && (
+        <div className="inline-panel mt-sm">
+          <div className="flex-1">
+            <div className="t-body-sm-medium">New password for {pwReset.user.name}</div>
+            <div className="set-genpw mt-xs" style={{ maxWidth: 360 }}>
+              <code>{pwReset.password}</code>
+              <button className="btn-icon" title="Copy" onClick={async () => { (await copyText(pwReset.password)) && app.toast('Copied') }}><Icon name="copy" size={16} /></button>
+              <button className="btn-icon" title="Regenerate" onClick={() => setPwReset({ ...pwReset, password: genPassword(10) })}><Icon name="refresh" size={16} /></button>
+            </div>
+          </div>
+          <Button size="sm" onClick={async () => { (await patch(pwReset.user, { password: pwReset.password }, `Password reset for ${pwReset.user.name}`)) && setPwReset(null) }}>Set password</Button>
+          <Button size="sm" variant="secondary" onClick={() => setPwReset(null)}>Cancel</Button>
+        </div>
+      )}
+
+      {pendingDelete && (
+        <div className="inline-panel danger mt-sm">
+          <Icon name="trash" size={18} />
+          <span className="flex-1 t-body-sm">Remove <strong>{pendingDelete.name}</strong> ({pendingDelete.email})? They can no longer log in and leave every assignment rotation. The seat stops billing.</span>
+          <Button size="sm" variant="danger" onClick={() => remove(pendingDelete)}>Remove user</Button>
+          <Button size="sm" variant="secondary" onClick={() => setPendingDelete(null)}>Cancel</Button>
+        </div>
+      )}
+
+      <Card className="mt-sm" pad={6}>
+        {users.length === 0 && <p className="t-body-sm c-steel" style={{ padding: 16 }}>No users yet — add the first one above.</p>}
+        {users.map((u) => (
+          <div key={u.id}>
+            <div className="dash-list-row">
+              <span className="dash-avatar">{userInitials(u.name)}</span>
+              <div className="dash-row-main">
+                <div className="dash-row-name">{u.name}{isOwner(u) && <Badge tone="info">Owner</Badge>}</div>
+                <div className="dash-row-sub">{u.email}{u.department ? ` · ${u.department}` : ''}</div>
+              </div>
+              <div className="row gap-sm wrap" style={{ justifyContent: 'flex-end' }}>
+                {isOwner(u)
+                  ? <Badge tone="neutral">Admin</Badge>
+                  : <PillSelect value={u.role} options={roleNames} onChange={(v) => patch(u, { role: v }, `${u.name} → ${v}`)} />}
+                <Switch size="sm" on={(u.status || 'Active') === 'Active'} disabled={isOwner(u)}
+                  onChange={(on) => patch(u, { status: on ? 'Active' : 'Inactive' }, on ? `${u.name} is active` : `${u.name} deactivated`)} />
+                <button className="feat-mini-btn" onClick={() => { setEditing(u.id); setEform({ name: u.name, email: u.email, phone: u.phone || '', department: u.department || '', designation: u.designation || '' }) }}>Edit</button>
+                <button className="feat-mini-btn" onClick={() => { setPendingDelete(null); setPwReset({ user: u, password: genPassword(10) }) }}>Reset password</button>
+                {!isOwner(u) && <button className="feat-mini-btn" onClick={() => { setPwReset(null); setPendingDelete(u) }}>Remove</button>}
+              </div>
+            </div>
+            {editing === u.id && eform && (
+              <div style={{ padding: '4px 12px 14px' }}>
+                <div className="grid grid-2" style={{ gap: 12 }}>
+                  <Field label="Name" required><Input value={eform.name} onChange={(e) => setEform({ ...eform, name: e.target.value })} /></Field>
+                  <Field label="Email" required><Input value={eform.email} onChange={(e) => setEform({ ...eform, email: e.target.value })} /></Field>
+                  <Field label="Phone"><Input value={eform.phone} onChange={(e) => setEform({ ...eform, phone: e.target.value })} /></Field>
+                  <Field label="Department"><Input value={eform.department} onChange={(e) => setEform({ ...eform, department: e.target.value })} /></Field>
+                  {!isOwner(u) && <Field label="Designation"><Input value={eform.designation} onChange={(e) => setEform({ ...eform, designation: e.target.value })} /></Field>}
+                </div>
+                <div className="row gap-xs mt-sm">
+                  <Button size="sm" onClick={saveEdit}>Save changes</Button>
+                  <Button size="sm" variant="secondary" onClick={() => { setEditing(null); setEform(null) }}>Cancel</Button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </Card>
+    </div>
+  )
+}
+
+/* ----- roles: create / per-module toggles / delete ----- */
+function RolesSection({ a, app, roles, setRoles, users }) {
+  const [name, setName] = useState('')
+  const [pendingDelete, setPendingDelete] = useState(null)
+
+  const permOn = (r, m) => (m.pricing ? (r.system || r.perms?.viewPricing !== false) : (r.system || r.perms?.[m.key] === true))
+  const members = (roleName) => users.filter((u) => u.role === roleName).length
+
+  const create = async () => {
+    const t = name.trim()
+    if (!t) return app.toast('Give the role a name')
+    if (roles.some((r) => r.name.toLowerCase() === t.toLowerCase())) return app.toast('That role already exists')
+    try {
+      const rec = await app.createAgencyRole(a.id, t)
+      setRoles((l) => [...l, rec])
+      setName('')
+      app.toast(`Role “${t}” created — set its access below`)
+    } catch (e) { app.toast(e.message || 'Could not create the role') }
+  }
+
+  const setPerm = async (role, key, value) => {
+    setRoles((l) => l.map((r) => (r.id === role.id ? { ...r, perms: { ...r.perms, [key]: value } } : r)))
+    try {
+      const rec = await app.setAgencyRolePerm(a.id, role.id, key, value)
+      setRoles((l) => l.map((r) => (r.id === rec.id ? rec : r)))
+    } catch (e) {
+      setRoles((l) => l.map((r) => (r.id === role.id ? role : r)))
+      app.toast(e.message || 'Could not update the permission')
+    }
+  }
+
+  const remove = async (role) => {
+    try {
+      await app.removeAgencyRole(a.id, role.id)
+      setRoles((l) => l.filter((r) => r.id !== role.id))
+      app.toast(`Role “${role.name}” deleted`)
+    } catch (e) { app.toast(e.message || 'Could not delete the role') }
+    setPendingDelete(null)
+  }
+
+  return (
+    <div className="mt-lg">
+      <div className="row gap-sm wrap">
+        <div>
+          <div className="dash-panel-title">Roles</div>
+          <div className="t-caption c-steel">What each role can open in the CRM — agencies describe the role they need in their request.</div>
+        </div>
+        <div className="grow" />
+        <div className="row gap-xs" style={{ maxWidth: 420 }}>
+          <Input value={name} placeholder="New role — e.g. Vendor Coordinator" onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && create()} />
+          <Button size="sm" onClick={create}>Add role</Button>
+        </div>
+      </div>
+
+      {pendingDelete && (
+        <div className="inline-panel danger mt-sm">
+          <Icon name="trash" size={18} />
+          <span className="flex-1 t-body-sm">Delete the <strong>{pendingDelete.name}</strong> role? Teammates must be moved off it first.</span>
+          <Button size="sm" variant="danger" onClick={() => remove(pendingDelete)}>Delete role</Button>
+          <Button size="sm" variant="secondary" onClick={() => setPendingDelete(null)}>Cancel</Button>
+        </div>
+      )}
+
+      {roles.map((r) => {
+        const on = ROLE_MODULES.filter((m) => permOn(r, m)).length
+        return (
+          <div key={r.id} className="feat-group">
+            <div className="feat-group-head" style={{ cursor: 'default' }}>
+              <span className="feat-group-ic"><Icon name="users" size={17} /></span>
+              <div>
+                <div className="feat-group-name">
+                  {r.name}
+                  {r.system && <Badge tone="info">System — full access</Badge>}
+                </div>
+                <div className="feat-group-count">{members(r.name)} member{members(r.name) === 1 ? '' : 's'} · {on} of {ROLE_MODULES.length} modules</div>
+              </div>
+              {!r.system && (
+                <div className="feat-group-actions">
+                  <button className="feat-mini-btn" onClick={() => setPendingDelete(r)}>Delete</button>
+                </div>
+              )}
+            </div>
+            {ROLE_MODULES.map((m) => (
+              <div key={m.key} className="feat-row">
+                <div className="feat-row-main">
+                  <div className="row gap-xs wrap">
+                    <span className="feat-row-label">{m.label}</span>
+                    {m.pricing && <span className="feat-plan-tag pro">opt-out</span>}
+                  </div>
+                  <div className="feat-row-desc">{m.desc}</div>
+                </div>
+                <Switch on={permOn(r, m)} disabled={r.system} onChange={(v) => setPerm(r, m.key, v)} />
+              </div>
+            ))}
+          </div>
+        )
+      })}
+    </div>
   )
 }
 

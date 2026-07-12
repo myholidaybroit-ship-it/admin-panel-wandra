@@ -292,3 +292,21 @@ export function defaultLimitsForPlan(planId) {
 export function countEnabled(featureMap) {
   return ALL_FEATURES.reduce((n, f) => n + (featureMap?.[f.key] ? 1 : 0), 0)
 }
+
+/* ── CRM feature-role modules ─────────────────────────────────────
+   The module-level permissions a tenant role can hold. Mirrors the
+   read-only Roles & Permissions matrix inside the CRM — roles are
+   provisioned from here (agencies request changes, we configure). */
+export const ROLE_MODULES = [
+  { key: 'dashboard', label: 'Dashboard', desc: 'KPIs, charts & pipeline overview' },
+  { key: 'clients', label: 'Trips & Clients', desc: 'Leads, client hub, documents' },
+  { key: 'builder', label: 'Quote Builder', desc: 'Create & edit packages, pricing, markup' },
+  { key: 'bookings', label: 'Bookings & Payments', desc: 'Confirm trips, record collections' },
+  { key: 'invoices', label: 'Invoices', desc: 'Issue invoices, record payments' },
+  { key: 'vouchers', label: 'Vouchers', desc: 'Hotel / transport / activity passes' },
+  { key: 'master', label: 'Master Data', desc: 'Destinations, hotels, cabs, activities, presets' },
+  { key: 'reports', label: 'Reports', desc: 'Lead & revenue analytics, exports' },
+  { key: 'landing', label: 'Landing Page', desc: 'Lead-capture site builder' },
+  { key: 'settings', label: 'Settings & Billing', desc: 'Agency profile, plan, users' },
+  { key: 'viewPricing', label: 'Pricing & Profit', desc: 'Cost, selling price, markup & profit everywhere (on by default)', pricing: true },
+]
