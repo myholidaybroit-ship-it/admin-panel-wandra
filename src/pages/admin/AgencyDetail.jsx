@@ -331,7 +331,7 @@ function UsersSection({ a, app, users, setUsers, roles, }) {
 
   const roleNames = roles.map((r) => r.name)
   const isOwner = (u) => u.designation === 'Owner'
-  const seatCap = a.limits?.team ?? -1
+  const seatCap = a.limits?.team ?? -1  // paid seats the agency has (₹999/user/month); -1 = unlimited
   const replaceUser = (rec) => setUsers((l) => l.map((u) => (u.id === rec.id ? rec : u)))
 
   const patch = async (user, p, okMsg) => {
@@ -350,6 +350,8 @@ function UsersSection({ a, app, users, setUsers, roles, }) {
       const rec = await app.createAgencyUser(a.id, { ...uform, name: uform.name.trim() })
       setUsers((l) => [rec, ...l])
       app.toast(`${rec.name} added — a new billable seat (₹999/mo)`)
+      // surface the saved credentials so the admin can copy & share them (they log in with these)
+      setPwReset({ user: rec, password: uform.password, saved: true })
       setUform({ ...BLANK_USER, password: genPassword(10) })
       setAdding(false)
     } catch (e) { app.toast(e.message || 'Could not add the user') }
@@ -408,17 +410,25 @@ function UsersSection({ a, app, users, setUsers, roles, }) {
       )}
 
       {pwReset && (
-        <div className="inline-panel mt-sm">
+        <div className={`inline-panel mt-sm ${pwReset.saved ? 'ok' : ''}`}>
           <div className="flex-1">
-            <div className="t-body-sm-medium">New password for {pwReset.user.name}</div>
+            <div className="t-body-sm-medium">
+              {pwReset.saved
+                ? `✓ Password saved for ${pwReset.user.name} — share it now, it won't be shown again`
+                : `New password for ${pwReset.user.name} — click “Set password” to activate it (they can't log in until you do)`}
+            </div>
             <div className="set-genpw mt-xs" style={{ maxWidth: 360 }}>
               <code>{pwReset.password}</code>
               <button className="btn-icon" title="Copy" onClick={async () => { (await copyText(pwReset.password)) && app.toast('Copied') }}><Icon name="copy" size={16} /></button>
-              <button className="btn-icon" title="Regenerate" onClick={() => setPwReset({ ...pwReset, password: genPassword(10) })}><Icon name="refresh" size={16} /></button>
+              {!pwReset.saved && <button className="btn-icon" title="Regenerate" onClick={() => setPwReset({ ...pwReset, password: genPassword(10) })}><Icon name="refresh" size={16} /></button>}
             </div>
           </div>
-          <Button size="sm" onClick={async () => { (await patch(pwReset.user, { password: pwReset.password }, `Password reset for ${pwReset.user.name}`)) && setPwReset(null) }}>Set password</Button>
-          <Button size="sm" variant="secondary" onClick={() => setPwReset(null)}>Cancel</Button>
+          {pwReset.saved
+            ? <Button size="sm" onClick={() => setPwReset(null)}>Done</Button>
+            : <>
+                <Button size="sm" onClick={async () => { (await patch(pwReset.user, { password: pwReset.password }, `Password set for ${pwReset.user.name} — they can log in now`)) && setPwReset({ ...pwReset, saved: true }) }}>Set password</Button>
+                <Button size="sm" variant="secondary" onClick={() => setPwReset(null)}>Cancel</Button>
+              </>}
         </div>
       )}
 

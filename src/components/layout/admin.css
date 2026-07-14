@@ -387,6 +387,7 @@
 }
 .inline-panel.warn { background: var(--color-warning-bg); border-color: transparent; }
 .inline-panel.danger { background: var(--color-error-bg); border-color: transparent; }
+.inline-panel.ok { background: var(--color-success-bg); border-color: transparent; }
 
 /* Anchored search dropdown (replaces the search modal) */
 .search-anchor { position: relative; display: flex; align-items: center; gap: 8px; }
