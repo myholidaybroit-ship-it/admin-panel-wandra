@@ -57,6 +57,11 @@ export default function AgencyList() {
                     <div className="ag-card-sub">{a.code} · {a.owner}</div>
                   </div>
                   <Badge tone={a.status === 'active' ? 'active' : 'error'}>{a.status}</Badge>
+                  {a.trial?.onTrial && (
+                    <Badge tone={a.trial.expired ? 'error' : a.trial.daysLeft <= 2 ? 'warning' : 'neutral'}>
+                      {a.trial.expired ? 'Trial expired' : `Trial ${a.trial.daysLeft}d`}
+                    </Badge>
+                  )}
                 </div>
                 <div className="ag-card-meta">
                   <div className="wa-kv"><span className="wa-kv-label">Plan</span><span className="wa-kv-value">{a.plan}</span></div>

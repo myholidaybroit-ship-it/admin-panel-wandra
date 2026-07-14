@@ -106,6 +106,8 @@ export function AppProvider({ children }) {
   async function setFeatures(id, patch) { replaceAgency(await api.patch(`/agencies/${id}/features`, { patch })) }
   async function resetFeatures(id) { replaceAgency(await api.post(`/agencies/${id}/features/reset`)); toast('Reset to current plan defaults') }
   async function setLimit(id, key, value) { replaceAgency(await api.patch(`/agencies/${id}/limits`, { key, value })) }
+  async function extendTrial(id, days) { replaceAgency(await api.patch(`/agencies/${id}/trial`, { days })); toast(days > 0 ? `Trial extended by ${days} days` : 'Trial updated') }
+  async function setTrialEnd(id, endsAt) { replaceAgency(await api.patch(`/agencies/${id}/trial`, { endsAt })); toast('Trial end date updated') }
   async function resetAgencyPassword(id, password) { await api.post(`/agencies/${id}/password`, { password }); toast('Agency password reset') }
 
   /* ---------- per-agency CRM roles (read-only in the CRM — provisioned here) ---------- */
@@ -184,7 +186,7 @@ export function AppProvider({ children }) {
     inr, toast,
     planFeatures, planLimits,
     addAgency, getAgency, updateAgency, removeAgency, setAgencyStatus,
-    setFeature, setFeatures, resetFeatures, setLimit, resetAgencyPassword,
+    setFeature, setFeatures, resetFeatures, setLimit, extendTrial, setTrialEnd, resetAgencyPassword,
     listAgencyRoles, createAgencyRole, setAgencyRolePerm, removeAgencyRole,
     listAgencyUsers, createAgencyUser, updateAgencyUser, removeAgencyUser,
     updatePlan, setPlanFeature, setPlanFeatures, setPlanLimit, resetPlanToCatalog, applyPlanToAgencies,

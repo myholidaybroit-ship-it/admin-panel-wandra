@@ -70,8 +70,9 @@ export default function AgencyCreate() {
           <div>
             <div className="dash-panel-title mb-base">What they'll get</div>
             <div className="wa-note">
-              New agencies start on the <strong>Free</strong> plan with <strong>{onCount}</strong> features enabled.
-              You can fine-tune every feature individually after creating the account.
+              New agencies start on the <strong>Free</strong> plan with <strong>{onCount}</strong> features enabled and a
+              <strong> 7-day free trial</strong>. When the trial ends the account is deactivated automatically — you can
+              extend it or move them to Pro anytime from the agency's <strong>Billing &amp; Renewals</strong> tab.
             </div>
           </div>
           <div className="renew-strip">

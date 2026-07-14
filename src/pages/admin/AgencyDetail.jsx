@@ -61,6 +61,11 @@ export default function AgencyDetail() {
             <span className="det-hero-title">{a.name}</span>
             <Badge tone={a.status === 'active' ? 'active' : 'error'}>{a.status}</Badge>
             <Badge tone={a.plan === 'Pro' ? 'info' : 'neutral'}>{a.plan}</Badge>
+            {a.trial?.onTrial && (
+              <Badge tone={a.trial.expired ? 'error' : a.trial.daysLeft <= 2 ? 'warning' : 'neutral'}>
+                {a.trial.expired ? 'Trial expired · deactivated' : `Trial · ${a.trial.daysLeft} day${a.trial.daysLeft === 1 ? '' : 's'} left`}
+              </Badge>
+            )}
           </div>
           <div className="det-hero-sub">{a.code} · {a.owner} · {a.city || '—'} · joined {prettyDate(a.createdAt)}</div>
         </div>
@@ -587,6 +592,40 @@ function RolesSection({ a, app, roles, setRoles, users }) {
 }
 
 /* ---------- Billing & renewals tab ---------- */
+/* Free-trial control — countdown + extend, or start one. Access auto-cuts off at expiry. */
+function TrialCard({ a, app }) {
+  const t = a.trial || {}
+  const [customDays, setCustomDays] = useState('')
+  const state = !t.onTrial ? 'none' : t.expired ? 'expired' : 'active'
+  const doCustom = () => { const d = Number(customDays); if (d > 0) { app.extendTrial(a.id, d); setCustomDays('') } }
+  return (
+    <Card className="stack-lg">
+      <div className="row-between">
+        <div className="dash-panel-title">Free trial</div>
+        <Badge tone={state === 'expired' ? 'error' : state === 'active' ? (t.daysLeft <= 2 ? 'warning' : 'active') : 'neutral'}>
+          {state === 'expired' ? 'Expired — account deactivated' : state === 'active' ? `${t.daysLeft} day${t.daysLeft === 1 ? '' : 's'} left` : 'No trial set'}
+        </Badge>
+      </div>
+      <p className="t-body-sm c-steel">
+        {state === 'expired'
+          ? `The trial ended on ${prettyDate(t.endsAt)} — the agency can no longer log in. Extend it below, or move them to Pro.`
+          : state === 'active'
+            ? `Trial runs until ${prettyDate(t.endsAt)}. When it ends the account is deactivated automatically until they upgrade to Pro.`
+            : 'This agency has no trial window. Start one below to time-box their free access.'}
+      </p>
+      <div className="row gap-xs wrap">
+        <Button size="sm" variant="secondary" onClick={() => app.extendTrial(a.id, 7)}>{state === 'none' ? 'Start 7-day trial' : '+7 days'}</Button>
+        <Button size="sm" variant="secondary" onClick={() => app.extendTrial(a.id, 14)}>+14 days</Button>
+        <Button size="sm" variant="secondary" onClick={() => app.extendTrial(a.id, 30)}>+30 days</Button>
+        <div className="row gap-xs">
+          <Input style={{ width: 88 }} type="number" min="1" placeholder="days" value={customDays} onChange={(e) => setCustomDays(e.target.value)} />
+          <Button size="sm" onClick={doCustom} disabled={!(Number(customDays) > 0)}>Extend</Button>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
 function BillingTab({ a, app, inr, nav, onActivate, onDowngrade }) {
   const txns = app.transactions.filter((t) => t.agencyId === a.id)
   const paidTotal = txns.reduce((s, t) => s + (t.amount || 0), 0)
@@ -594,18 +633,21 @@ function BillingTab({ a, app, inr, nav, onActivate, onDowngrade }) {
 
   if (a.plan !== 'Pro') {
     return (
-      <Card className="stack-lg" style={{ maxWidth: 640 }}>
-        <div>
-          <div className="dash-panel-title">On the Free plan</div>
-          <p className="t-body-sm c-steel mt-xs">This agency is on Free. To move them to Pro you must record a payment with proof — that keeps every subscription authentic and generates a secured invoice.</p>
-        </div>
-        <div className="renew-strip">
-          <Icon name="billing" size={18} />
-          <span className="flex-1 t-body-sm">Activate Pro at <strong>{inr(app.proPrice())}/mo</strong>{app.proBilledYearly() ? `, billed yearly at ${inr(app.proAnnual())}` : ''} (discounts allowed).</span>
-          <Button onClick={onActivate}>Activate Pro plan</Button>
-        </div>
-        {txns.length > 0 && <TxnList txns={txns} inr={inr} onOpen={openInvoice} />}
-      </Card>
+      <div className="col gap-md" style={{ maxWidth: 640 }}>
+        <TrialCard a={a} app={app} />
+        <Card className="stack-lg">
+          <div>
+            <div className="dash-panel-title">On the Free plan</div>
+            <p className="t-body-sm c-steel mt-xs">This agency is on Free. To move them to Pro you must record a payment with proof — that keeps every subscription authentic and generates a secured invoice.</p>
+          </div>
+          <div className="renew-strip">
+            <Icon name="billing" size={18} />
+            <span className="flex-1 t-body-sm">Activate Pro at <strong>{inr(app.proPrice())}/mo</strong>{app.proBilledYearly() ? `, billed yearly at ${inr(app.proAnnual())}` : ''} (discounts allowed).</span>
+            <Button onClick={onActivate}>Activate Pro plan</Button>
+          </div>
+          {txns.length > 0 && <TxnList txns={txns} inr={inr} onOpen={openInvoice} />}
+        </Card>
+      </div>
     )
   }
 
